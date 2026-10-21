@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1347e634-ff0c-4b68-886c-0f3cadf60001" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="a7d254cd-64d3-4b66-b9fe-b9cd82f82ee3" file="test.properties" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d751fcae-45e8-4fe7-9de6-cbce7e3b576a" >
+		<http:request-connection protocol="HTTPS" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="089cb01b-22e8-40b5-81aa-8cc82120fc2b">
+		<http:request-connection protocol="HTTPS" >
+			<http:authentication >
+				<http:basic-authentication username="carUser@boomitrainingparent-ALQN3P.R1T58M" password="337d9ab7-7aab-472e-82ef-741c23d4df0e" />
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="c2e9c857-a253-41a9-8c97-683018a40ff5" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Digitide@12345" database="book" />
+	</db:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="9b81d8ab-251f-4038-8150-76267214678e" >
+		<salesforce:basic-connection username="danishk6260@gmail.com" password="Salesforce@12345" securityToken="iufQgSIKTIxVPj9tlUN0RMIC" url="https://login.salesforce.com/services/Soap/u/60.0" />
+	</salesforce:sfdc-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="f0fe5243-89a6-471c-b283-00c36434f055" />
+	<configuration doc:name="Configuration" doc:id="e734bb95-07ba-44f2-82de-e6e2b1a3e2b9" defaultErrorHandler-ref="practice-apiError_Handler" />
+	<flow name="practice-apiFlow" doc:id="4fcba505-d77f-4de8-9caa-848381e90bac" >
+		<http:listener doc:name="Listener" doc:id="0af7b94d-e7f9-421e-adf7-15a0e81c044a" config-ref="HTTP_Listener_config" path="/status"/>
+		<logger level="INFO" doc:name="Start" doc:id="8249e6c7-ad5f-447e-bb5c-861f95f55747" message="start flow"/>
+		<set-variable value="#[attributes.queryParams.city1]" doc:name="cityName1" doc:id="8c2d57e4-16cf-411d-913c-e6b944fbcff7" variableName="cityName1"/>
+		<set-variable value="#[attributes.queryParams.city2]" doc:name="cityName2" doc:id="c3a3a1be-3a09-42d2-adb8-bba829283ece" variableName="cityName2"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="9798682f-0679-4655-a0d9-d1480eed76a6" >
+			<route >
+				<try doc:name="Try" doc:id="5995f356-a4db-4690-9efe-b84570e167f0" >
+					<http:request method="GET" doc:name="Request" doc:id="86baa1db-af3b-47e3-8817-92159973137b" config-ref="HTTP_Request_configuration" url="https://api.weatherstack.com/current">
+			<http:query-params><![CDATA[#[output application/json
+---
+{
+	"access_key" : "9069f0e7ea7a785f9a27f210ac4e1284",
+	"query" : vars.cityName1
+}]]]></http:query-params>
+		</http:request>
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2546b3a6-9f4f-458f-859c-cdfd2714c832" type="ANY">
+							<ee:transform doc:name="Transform Message" doc:id="f4356c39-de09-40c6-a13a-f2b9950da96e" >
+								<ee:message >
+									<ee:set-payload ><![CDATA["Error raise in temp api"]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+			<route >
+				<try doc:name="Try" doc:id="2d981401-8757-4885-a886-22458c49f363" >
+					<db:select doc:name="Select" doc:id="4e4c401b-0bab-4bb0-a4e8-db7a020fec6b" config-ref="Database_Config">
+			<db:sql><![CDATA[Select * from books]]></db:sql>
+					<db:input-parameters><![CDATA[#[books : vars.cityName2]]]></db:input-parameters>
+		</db:select>
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ef7dc95a-e82f-4750-83c8-d9d45f1ae480" type="ANY">
+							<ee:transform doc:name="Transform Message" doc:id="b3c2dd15-449f-4863-9e9f-f9fb104938f7" >
+								<ee:message >
+									<ee:set-payload ><![CDATA["error raise in sql api"]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+			<route >
+				<try doc:name="Try" doc:id="c1c44483-f768-4b8a-a5db-9f8e289f8888" >
+					<http:request method="GET" doc:name="Request" doc:id="cd7b7395-d3a1-4d49-b553-ad4542075531" config-ref="HTTP_Request_configuration" url="www.danish.com" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="569872bc-d102-4781-94be-f5c3d38b039d" type="ANY">
+							<ee:transform doc:name="Transform Message" doc:id="819bf0ab-73e7-4b19-89ff-8a64c53c1f70" >
+								<ee:message >
+									<ee:set-payload ><![CDATA["error raise in danish api"]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="ec7a3e73-ab65-4bb3-b673-86438e26c746" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End" doc:id="a0ac793a-0821-476a-b9b5-5543673d52da" message="End flow"/>
+	</flow>
+	<flow name="practice-apiFlow1" doc:id="bcd3d628-b312-4e61-9cb5-c168ce46dbd7" >
+		<http:listener doc:name="Listener" doc:id="34859016-e45a-41c1-908a-fda8b545f98c" config-ref="HTTP_Listener_config" path="/db"/>
+		<set-variable value="#[attributes.queryParams.db]" doc:name="Set Variable" doc:id="c73269f1-2131-424b-ae58-dd5c0e4aeb3a" variableName="dbname"/>
+		<set-variable value="#[attributes.queryParams.id]" doc:name="id" doc:id="6e96a8ae-8dde-4eec-a5b0-08e9db4f119e" variableName="id"/>
+		<set-variable value="#[attributes.queryParams.name]" doc:name="name" doc:id="595b4efd-1ddd-4c24-b3bb-821e593cf641" variableName="name"/>
+		<set-variable value="#[attributes.queryParams.book]" doc:name="book" doc:id="53532156-a3ca-4ebd-990a-4a652c40e9d3" variableName="book"/>
+		<db:select doc:name="Select" doc:id="1b1f3366-2a9e-40aa-9aa2-36daf9a85aa2" config-ref="Database_Config">
+			<db:sql ><![CDATA[#["SELECT * FROM " ++ vars.dbname]]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message1" doc:id="be1daaa5-6e48-4381-960c-e3a28322844a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="312c1949-4303-4b07-8cea-166cc50568f0" variableName="payload"/>
+		<db:insert doc:name="Insert" doc:id="6a399f79-9e37-4ea2-a937-a28370d59c33" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into buk values(:id,:name,:book);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id : vars.id,
+	name : vars.name,
+	book : vars.book
+}]]]></db:input-parameters>
+		</db:insert>
+		<set-payload value="#[vars.payload]" doc:name="Set Payload" doc:id="33762330-8e7c-438f-b7c9-4df9a8257c2c" />
+		<logger level="INFO" doc:name="End" doc:id="b35da447-d998-428d-aabf-db9ede361bab" message="Payload"/>
+	</flow>
+	<flow name="practice-apiFlow2" doc:id="41dd9058-690c-435a-8dfd-2b61ccb18a07" >
+		<http:listener doc:name="Listener" doc:id="bdcf6316-c05e-4f4b-b72c-ff637a60ec8c" config-ref="HTTP_Listener_config" path="/salesforce"/>
+		<ee:transform doc:name="Transform Message" doc:id="bd4b92fb-9387-4f04-a1c9-b885fd6579ca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create" doc:id="48732c33-addf-43d7-a7ee-0a9a0478d406" config-ref="Salesforce_Config" type="Account"/>
+		<ee:transform doc:name="Transform Message" doc:id="33b8c9ad-fdb9-4632-b9a2-b1fdfc231b7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="practice-apiFlow3" doc:id="4c3144bb-73a5-4122-8d0f-caec725434dd" >
+		<salesforce:modified-object-listener objectType="Lead" doc:name="On Modified Object" doc:id="8e601afe-33c0-4e89-8a06-2f9c2ca2e985" config-ref="Salesforce_Config">
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<ee:transform doc:name="Transform Message" doc:id="b357c273-9435-4075-a80b-b4dd4ab81d9b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert" doc:id="f221cce8-aa69-4254-8585-ccb45becb0e6" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into Salesforce values(:Name,:Status,:Country,:LastName,:Website,:Salutation,:FirstName,:Company,:Email);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{Name : payload.Name,
+Status : payload.Status,
+Country : payload.Country,
+LastName : payload.LastName,
+Website : payload.Website,
+Salutation : payload.Salutation,
+FirstName : payload.FirstName,
+Company : payload.Company,
+Email : payload.Email
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger" doc:id="dd289327-e5ad-4f6b-9814-3db2b81747bc" message="#[payload]"/>
+	</flow>
+	<flow name="practice-apiFlow4" doc:id="8892b442-b1b5-4ff1-a4b7-45f97832c981" >
+		<salesforce:modified-object-listener doc:name="On Modified Object" doc:id="2ba945b8-590c-4ede-9a0f-2456fc9763c0" config-ref="Salesforce_Config" objectType="Account">
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<ee:transform doc:name="Transform Message" doc:id="009e1b9d-f72e-48e6-972f-2d91082eca7e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="bbad03c7-2304-4217-a560-1266d45bc8db" config-ref="File_Config" path="C:\Users\DIS991\Downloads\salesforce.csv"/>
+		<logger level="INFO" doc:name="Logger" doc:id="c94e901a-954d-4a7e-ac15-d72711ac739a" message="#[payload]"/>
+	</flow>
+	<flow name="practice-apiFlow5" doc:id="41dd9058-690c-435a-8dfd-2b61ccb18a07" >
+		<http:listener doc:name="Listener" doc:id="bdcf6316-c05e-4f4b-b72c-ff637a60ec8c" config-ref="HTTP_Listener_config" path="/query"/>
+	<salesforce:query doc:name="Query" doc:id="16f39593-29fe-41c1-ae3f-a17e5fd8638e" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[Select fields(ALL) from Account limit 200]]></salesforce:salesforce-query>
+		</salesforce:query>
+
+		<ee:transform doc:name="Transform Message" doc:id="33b8c9ad-fdb9-4632-b9a2-b1fdfc231b7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{ RollNo : payload.RollNo__c,
+    Name : payload.Name,
+    Website : payload.Website
+ }
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+		<flow name="practice-apiFlow7" doc:id="41dd9058-690c-435a-8dfd-2b61ccb18a07" >
+		<http:listener doc:name="Listener" doc:id="bdcf6316-c05e-4f4b-b72c-ff637a60ec8c" config-ref="HTTP_Listener_config" path="/upsert"/>
+
+		<salesforce:upsert doc:name="Upsert" doc:id="87b0cb5f-eac2-4cbe-83e1-ea628ea4a22a" config-ref="Salesforce_Config" objectType="Account" externalIdFieldName="RollNo__c"/>
+		<ee:transform doc:name="Transform Message" doc:id="33b8c9ad-fdb9-4632-b9a2-b1fdfc231b7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{ RollNo : payload.RollNo__c,
+    Name : payload.Name,
+    Website : payload.Website
+ }
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="practice-apiFlow8" doc:id="41dd9058-690c-435a-8dfd-2b61ccb18a07" >
+		<http:listener doc:name="Listener" doc:id="bdcf6316-c05e-4f4b-b72c-ff637a60ec8c" config-ref="HTTP_Listener_config" path="/update"/>
+		<ee:transform doc:name="Transform Message" doc:id="bd4b92fb-9387-4f04-a1c9-b885fd6579ca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:update type="Account" doc:name="Update" doc:id="b9d5255b-7659-4c7b-b740-cd8a166beee8" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="33b8c9ad-fdb9-4632-b9a2-b1fdfc231b7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>	
+
+	<flow name="practice-apiFlow6" doc:id="41dd9058-690c-435a-8dfd-2b61ccb18a07" >
+		<http:listener doc:name="Listener" doc:id="bdcf6316-c05e-4f4b-b72c-ff637a60ec8c" config-ref="HTTP_Listener_config" path="/publishplatform"/>
+		<ee:transform doc:name="Transform Message" doc:id="bd4b92fb-9387-4f04-a1c9-b885fd6579ca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:publish-platform-event-message platformEventName="FirstPlatformEvent__e" doc:name="Publish platform event message" doc:id="6432a94b-755f-43d9-97e5-191f0ae17e97" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="33b8c9ad-fdb9-4632-b9a2-b1fdfc231b7a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="practice-apiFlow9" doc:id="cfc928cf-3e7c-4989-8f85-157de0ea79e0" >
+		<salesforce:subscribe-channel-listener doc:name="Subscribe channel listener" doc:id="8235beb0-ee4f-4f70-8943-166dd30089f2" config-ref="Salesforce_Config" streamingChannel="/event/FirstPlatformEvent__e"/>
+		<ee:transform doc:name="Transform Message" doc:id="280ddf06-fcd3-4d53-9650-3212bbc08d43" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1d2de064-2c80-42a7-b9eb-e385ddafb881" message="#[payload]"/>
+	</flow>
+	<flow name="practice-apiFlow10" doc:id="649e0fa8-c10c-44bf-9cf6-54e8283b1bd3" >
+		<http:listener doc:name="Listener" doc:id="c97d4651-50ea-4223-aa58-dbba1cd11e6c" config-ref="HTTP_Listener_config" path="/errorflow">
+			<http:error-response >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<ee:transform doc:name="Transform Message" doc:id="58ef9e53-66ef-44dc-87d6-27d1f70ca1d8">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="90976339-2ec2-4766-ac6a-9b2e4fecdeaa" name="practice-apiFlow11"/>
+		<ee:transform doc:name="Transform Message" doc:id="3ded4708-4441-418f-a099-c30ad3dc206a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="841f87b1-0515-4a41-bbdb-7d77e7583d4e" message="#[payload]"/>
+	</flow>
+	<flow name="practice-apiFlow11" doc:id="9b349a62-4bbc-4c48-b4b2-630871906fae" >
+		<logger level="INFO" doc:name="Logger" doc:id="bae3385f-66cc-4755-aa17-f62fd38f14a2" message="#[payload]"/>
+		<try doc:name="Try" doc:id="e681689e-e9c3-4d02-8666-8e68bb268e84" >
+			<until-successful maxRetries="5" doc:name="Until Successful" doc:id="9979e116-300b-4782-a280-8121bbf79799" millisBetweenRetries="3000">
+				<http:request method="DELETE" doc:name="Request" doc:id="4c5510f4-bd1f-4fa6-aa60-e8222d42a324" config-ref="HTTP_Request_configuration" url="https://api.weatherstack.com/current">
+				<http:query-params><![CDATA[#[output application/json
+---
+{
+	"access_key" : "9069f0e7ea7a785f9a27f210ac4e1284",
+	"query" : "Dabra"
+}]]]></http:query-params>
+			</http:request>
+				<logger level="INFO" doc:name="Logger" doc:id="3ab20640-714f-4f0c-bf1f-3159a0fdb622" />
+			</until-successful>
+			<logger level="INFO" doc:name="Logger" doc:id="f050479c-cd97-4afa-96c3-6f3217e57d10" message="#[payload]"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a8e406de-9cfa-4b4f-9bec-17a74c091f5b" type="HTTP:BAD_REQUEST">
+					<ee:transform doc:name="Transform Message" doc:id="55dc9f34-6ece-4003-9015-ecc1fc002a99" >
+						<ee:message >
+							<ee:set-payload ><![CDATA["Error in connector level"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="51c6e7ad-7068-496d-9a1b-fe455dc1072b" message="#[payload]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8d366962-4088-42d7-88ec-28a3309aab04" type="STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<logger level="INFO" doc:name="Logger" doc:id="7d5b0f12-fdaa-49e2-90d5-6dafcf54e441" message="#[payload]" />
+				<ee:transform doc:name="Transform Message" doc:id="d5b000bc-831d-45bb-b5ed-941b2583ee58">
+					<ee:message>
+						<ee:set-payload><![CDATA["Error in Sub-flow"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="f0b78348-7ff0-4bb3-8359-d3fe0f7e250e" message="#[payload]" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="practice-apiFlow12" doc:id="7e319031-1769-4275-805b-b741a6581c50" >
+		<http:listener doc:name="Listener" doc:id="110826ca-9b11-4af0-910a-7f4861cd633c" config-ref="HTTP_Listener_config" path="/raiseerror"/>
+		<ee:transform doc:name="Transform Message" doc:id="028d71f6-cf0c-4b41-b895-797943590e78" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="b721374f-f016-4d61-8a00-6492c63cafce" >
+			<when expression='#[(payload.fruit) != "apple"]'>
+				<raise-error doc:name="Raise error" doc:id="548fde6b-31a5-49ae-9c81-a2960ada9445" type="FRUIT: NOT_APPLE" description='"This is not apple"'/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message1" doc:id="46037195-1940-4a7e-a3c2-9b7dd9a908ed" >
+					<ee:message >
+						<ee:set-payload ><![CDATA["this is apple"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="8aa2b036-76a2-40a8-bc4c-b5211c7d0a59" message="#[payload]"/>
+	</flow>
+	<error-handler name="practice-apiError_Handler" doc:id="4527cd98-81a2-4a34-9df3-954a82da1661" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="605065c5-7bcc-4f44-930e-799650c6c7eb" type="STREAM_MAXIMUM_SIZE_EXCEEDED">
+			<ee:transform doc:name="Transform Message" doc:id="5baa25fb-05fb-4d0a-9ec6-9d3c07620657" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["Error raised on Global error handler... on Error Propagate"]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2b67ebaf-f037-49d4-9e76-5ddad2a79f98" type="ANY">
+			<ee:transform doc:name="Transform Message" doc:id="fcec6726-6a02-4cd9-90ec-a21a70140bf9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["Error raised on Global error handler... on Error continue"]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-continue>
+	</error-handler>
+	<flow name="practice-apiFlow13" doc:id="ce2f3c93-e19e-4906-beaf-a335cd9095c5" >
+		<http:listener doc:name="Listener" doc:id="873e8a1c-e63f-471d-9200-d3b82e4670e7" config-ref="HTTP_Listener_config" path="/foreach"/>
+		<ee:transform doc:name="Transform Message" doc:id="9ff58989-a709-46b4-921f-994c186265e0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[[]]" doc:name="Set Variable" doc:id="4fdc50b3-51d3-4394-a907-2bb85861c37e" variableName="inputvalues"/>
+		<!-- [STUDIO:"For Each"]<foreach doc:name="For Each" doc:id="dcbbb3da-e495-4afb-bab1-b67cff5beaf1" collection="#[payload&#93;">
+		</foreach> [STUDIO] -->
+		<parallel-foreach doc:name="Parallel For Each" doc:id="57f2cfb6-a802-4572-96f7-f63fcc47d181" collection="#[payload]">
+			<try doc:name="Try" doc:id="c5e2da3b-aeea-449b-9bb0-4c230a701584">
+			<set-payload value="#[payload +10]" doc:name="Set Payload" doc:id="e4fb2dc8-dd7c-4d09-9877-ad4c32b68baa" />
+				<logger level="INFO" doc:name="Logger" doc:id="c536ea7d-d51f-46ad-a51a-10f4dd8ee33f" message='#["inside the for each:::::" : payload]' />
+				<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;vars.inputvalues + payload]" doc:name="Set Variable" doc:id="8eeb2546-b33e-4128-9411-6a8d359a8e64" variableName="inputvalues" />
+				<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="21fe6384-1df8-47c1-971c-e72a26b10b49" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="3818a78a-c2fe-4e7e-9c5e-6bbe2ff19ec9">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Error raised in for each component" : payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		</parallel-foreach>
+		<ee:transform doc:name="Transform Message" doc:id="3d2921ce-aa5a-4545-a292-d0c1787a496e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.inputvalues]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2325539a-55b1-4bcc-b937-19aaff2695bd" message='#["Final Result:" : payload]'/>
+	</flow>
+	<flow name="practice-apiFlow14" doc:id="4ecee7b6-7bf0-4970-b18e-b11aadb3e55b" >
+		<http:listener doc:name="Listener" doc:id="af8786cd-4184-4b96-971f-da50fb1b3ee7" config-ref="HTTP_Listener_config" path="/batchjob"/>
+		<ee:transform doc:name="Transform Message" doc:id="53fa89fe-09cb-4684-84ab-2d2a45111427" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="practice-apiBatch_Job" doc:id="8299cae9-b480-4dcd-9a40-1545fe5baadb" maxFailedRecords="10">
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="c0764e71-0fdc-48af-9ef4-7dd2b077661a" acceptPolicy="ALL">
+					<set-payload value="#[payload + 10]" doc:name="Set Payload" doc:id="6c1241d0-9655-4d08-a208-61d374c81cfe" />
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="38dc9ec0-b1d9-43e3-a90c-b0c525b92082" size="2">
+						<logger level="INFO" doc:name="Logger" doc:id="9a71e73e-4f02-4051-acab-440e826aa712" message='#["success records" : payload]'/>
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="Batch_Step1" doc:id="d41ccc96-bfa2-4137-bd68-8cf5364e4dd4" acceptPolicy="ONLY_FAILURES">
+					<set-payload value="#[payload]" doc:name="Set Payload" doc:id="071fc50f-df0d-41d6-a7b3-ed2b67e279ad" />
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="6c88b3e1-25c1-482b-823c-76536ca81bf7" size="3">
+						<logger level="INFO" doc:name="Logger" doc:id="a6982781-541e-4a82-b000-53e1e3cee766" message='#["failure records" : payload]'/>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<ee:transform doc:name="Transform Message" doc:id="05194505-2a14-4701-96fe-b79d1a36e1bb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="Transform Message" doc:id="eef16d63-a21f-4249-afaa-5b6148a858e3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="7a7ca458-52b1-4c11-9fd7-9dff08d672ef" message="#[payload]"/>
+	</flow>		
+	
+</mule>
